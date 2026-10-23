@@ -31,6 +31,7 @@
    (expresion ("(" expresion primitiva-binaria expresion ")") primapp-bin-exp)
    (expresion (primitiva-unaria "("expresion ")") primapp-un-exp)
    (expresion ("Si" expresion "{" expresion "}" "sino" "{" expresion "}") condicional-exp )
+   (expresion ("declarar" "(" (arbno identifier "=" expresion ";") ")" "{" expresion "}") variableLocal-exp )
    (primitiva-binaria ("+") primitiva-suma)
    (primitiva-binaria ("~") primitiva-resta)
    (primitiva-binaria ("/") primitiva-div)
@@ -226,7 +227,22 @@
       (condicional-exp (test-exp true-exp false-exp)
                        (if (valor-verdad? (evaluar-expresion test-exp env))
                            (evaluar-expresion true-exp env)
-                           (evaluar-expresion false-exp env))))))
+                           (evaluar-expresion false-exp env)))
+
+      (variableLocal-exp (ids exps cuerpo)
+                         (let ((args (eval-rands exps env)))
+                           (evaluar-expresion cuerpo
+                                              (extend-env ids args env)))))))
+
+;; Recibe una lista de operandos (expresiones) y un ambiente; retorna la
+;; lista con el valor de cada operando, evaluado en ese ambiente.
+;; Se usa para evaluar las expresiones de las variables locales (declarar)
+;; antes de extender el ambiente, y luego servirá para los argumentos
+;; de los procedimientos.
+
+(define eval-rands
+  (lambda (rands env)
+    (map (lambda (x) (eval-rand x env)) rands)))
 
 ;; Recibe un operando (expresión) y un ambiente; retorna su valor.
 ;; Se usa para evaluar los argumentos de las primitivas.
