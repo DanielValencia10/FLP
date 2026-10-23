@@ -30,8 +30,9 @@
    (expresion (identifier) var-exp)
    (expresion ("(" expresion primitiva-binaria expresion ")") primapp-bin-exp)
    (expresion (primitiva-unaria "("expresion ")") primapp-un-exp)
-   (expresion ("Si" expresion "{" expresion "}" "sino" "{" expresion "}") condicional-exp )
-   (expresion ("declarar" "(" (arbno identifier "=" expresion ";") ")" "{" expresion "}") variableLocal-exp )
+   (expresion ("Si" expresion "{" expresion "}" "sino" "{" expresion "}") condicional-exp)
+   (expresion ("declarar" "(" (arbno identifier "=" expresion ";") ")" "{" expresion "}") variableLocal-exp)
+   (expresion ("procedimiento" "(" (separated-list identifier ",") ")" "{" expresion "}") procedimiento-ex)
    (primitiva-binaria ("+") primitiva-suma)
    (primitiva-binaria ("~") primitiva-resta)
    (primitiva-binaria ("/") primitiva-div)
@@ -93,6 +94,18 @@
   (extendido (syms (list-of symbol?))
                        (vals (list-of scheme-value?))
                        (env ambiente?)))
+
+;; Datatype del valor de un procedimiento (ProcVal). Una cerradura guarda:
+;;  - lista-ID: la lista de parámetros del procedimiento.
+;;  - exp: el cuerpo del procedimiento (sin evaluar).
+;;  - amb: el ambiente donde se declaró el procedimiento.
+;; Se retorna al evaluar un procedimiento y se usa al aplicarlo.
+
+(define-datatype procVal procVal?
+  (cerradura
+     (lista-ID(list-of symbol?))
+     (exp expresion?)
+     (amb ambiente?)))
 
 ;; Recibe un predicado y una lista; retorna la posición del primer
 ;; elemento que cumple el predicado, o #f si ninguno lo cumple.
@@ -232,7 +245,10 @@
       (variableLocal-exp (ids exps cuerpo)
                          (let ((args (eval-rands exps env)))
                            (evaluar-expresion cuerpo
-                                              (extend-env ids args env)))))))
+                                              (extend-env ids args env))))
+
+      (procedimiento-ex (ids cuerpo)
+                        (cerradura ids cuerpo env)))))
 
 ;; Recibe una lista de operandos (expresiones) y un ambiente; retorna la
 ;; lista con el valor de cada operando, evaluado en ese ambiente.
@@ -249,6 +265,7 @@
 (define eval-rand
   (lambda (rand env)
     (evaluar-expresion rand env)))
+
 
 ;; Recibe el árbol de sintaxis de un programa y evalúa su expresión
 ;; principal en el ambiente inicial.
