@@ -2,7 +2,7 @@
 
 ;; Integrantes:
 ;; ANA SOFIA CANTILLO BOLAÑOS       202610112
-;; SARA JULISSA HERNANDEZ HERNANDEZ ?????????
+;; SARA JULISSA HERNANDEZ HERNANDEZ 202610102
 ;; HECTOR DANIEL CARABALI VALENCIA  202410213
 
 ;; Enlace al repositorio:
@@ -33,6 +33,7 @@
    (expresion ("Si" expresion "{" expresion "}" "sino" "{" expresion "}") condicional-exp)
    (expresion ("declarar" "(" (arbno identifier "=" expresion ";") ")" "{" expresion "}") variableLocal-exp)
    (expresion ("procedimiento" "(" (separated-list identifier ",") ")" "{" expresion "}") procedimiento-ex)
+   (expresion ("evaluar" expresion "(" (separated-list expresion ",") ")" "finEval") app-exp)    
    (primitiva-binaria ("+") primitiva-suma)
    (primitiva-binaria ("~") primitiva-resta)
    (primitiva-binaria ("/") primitiva-div)
