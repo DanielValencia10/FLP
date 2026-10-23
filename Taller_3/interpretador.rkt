@@ -1,7 +1,7 @@
 #lang eopl
 
 ;; Integrantes:
-;; ANA SOFIA CANTILLO BOLAÑOS       ?????????
+;; ANA SOFIA CANTILLO BOLAÑOS       202610112
 ;; SARA JULISSA HERNANDEZ HERNANDEZ ?????????
 ;; HECTOR DANIEL CARABALI VALENCIA  202410213
 
@@ -30,6 +30,7 @@
    (expresion (identifier) var-exp)
    (expresion ("(" expresion primitiva-binaria expresion ")") primapp-bin-exp)
    (expresion (primitiva-unaria "("expresion ")") primapp-un-exp)
+   (expresion ("Si" expresion "{" expresion "}" "sino" "{" expresion "}") condicional-exp )
    (primitiva-binaria ("+") primitiva-suma)
    (primitiva-binaria ("~") primitiva-resta)
    (primitiva-binaria ("/") primitiva-div)
