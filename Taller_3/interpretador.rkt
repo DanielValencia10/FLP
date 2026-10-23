@@ -221,7 +221,12 @@
 
       (primapp-un-exp (prim exp)
                       (let ((args (list (eval-rand exp env))))
-                     (apply-primitive prim args))))))
+                     (apply-primitive prim args)))
+      
+      (condicional-exp (test-exp true-exp false-exp)
+                       (if (valor-verdad? (evaluar-expresion test-exp env))
+                           (evaluar-expresion true-exp env)
+                           (evaluar-expresion false-exp env))))))
 
 ;; Recibe un operando (expresión) y un ambiente; retorna su valor.
 ;; Se usa para evaluar los argumentos de las primitivas.
