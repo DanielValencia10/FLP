@@ -18,7 +18,7 @@
   (number ("-" digit (arbno digit)) number)
   (number (digit (arbno digit) "." digit (arbno digit)) number)
   (number ("-" digit (arbno digit) "." digit (arbno digit)) number)
-  (text (letter (arbno (or letter digit "_"))) symbol)
+  (text (letter (arbno (or letter digit "_"))) string)
   )
 )
 
@@ -34,7 +34,7 @@
    (primitiva-binaria ("~") primitiva-resta)
    (primitiva-binaria ("/") primitiva-div)
    (primitiva-binaria ("*") primitiva-multi)
-   ;;(primitiva-binaria ("concat") primitiva-concat)
+   (primitiva-binaria ("concat") primitiva-concat)
    (primitiva-binaria (">") primitiva-mayor)
    (primitiva-binaria ("<") primitiva-menor)
    (primitiva-binaria (">=") primitiva-mayor-igual)
@@ -179,24 +179,24 @@
       (primitiva-suma () (+ (car args) (cadr args)))
       (primitiva-resta () (- (car args) (cadr args)))
       (primitiva-multi () (* (car args) (cadr args)))
-      (primitiva-div () (if (= (cadr args) 0) (eopl:error 'apply-primitive-bin "division by zero") (/ (exact->inexact(car args)) (cadr args))))
-      ;;(primitiva-concat () (append (car args) (cadr args)))
+      (primitiva-div () (if (= (cadr args) 0) (eopl:error 'apply-primitive-bin "division by zero") (/ (car args) (cadr args))))
+      (primitiva-concat () (string-append (car args) (cadr args)))
       (primitiva-mayor () (boolean-out (> (car args) (cadr args))))
       (primitiva-menor () (boolean-out (< (car args) (cadr args))))
       (primitiva-mayor-igual () (boolean-out (>= (car args) (cadr args))))
       (primitiva-menor-igual () (boolean-out (<= (car args) (cadr args))))
-      (primitiva-diferente () (boolean-out (not (eqv? (car args) (cadr args)))))
-      (primitiva-comparador-igual () (boolean-out (eqv? (car args) (cadr args))))
+      (primitiva-diferente () (boolean-out (not (equal? (car args) (cadr args)))))
+      (primitiva-comparador-igual () (boolean-out (equal? (car args) (cadr args))))
    )))
 
 ;; Recibe una primitiva unaria y una lista con su argumento;
 ;; retorna el resultado de aplicar la operación.
-(define apply-primitive
+(define apply-primitive-un
   (lambda (prim args)
     (cases primitiva-unaria prim
       (primitiva-add1 () (+ (car args) 1))
       (primitiva-sub1 () (- (car args) 1))
-      (primitiva-longitud () (length args))
+      (primitiva-longitud () (string-length (car args)))
       (primitiva-negacion-booleana () (boolean-out (not (valor-verdad? (car args))))))
     )
   )
@@ -220,7 +220,7 @@
 
       (primapp-un-exp (prim exp)
                       (let ((args (list (eval-rand exp env))))
-                     (apply-primitive prim args))))))
+                     (apply-primitive-un prim args))))))
 
 ;; Recibe un operando (expresión) y un ambiente; retorna su valor.
 ;; Se usa para evaluar los argumentos de las primitivas.
