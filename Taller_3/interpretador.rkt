@@ -262,7 +262,13 @@
                            (evaluar-expresion cuerpo
                                               (extend-env ids args env))))
 
-      
+      (app-exp (exp exps)
+               (let ((proc (evaluar-expresion exp env))
+                     (args (eval-rands exps env)))
+                 (if (procVal? proc)
+                     (apply-procedure proc args)
+                     (eopl:error 'evaluar-expresion
+                                 "se aplico algo que no es un procedimiento ~s" proc))))
                      
       (procedimiento-ex (ids cuerpo)
                         (cerradura ids cuerpo env)))))
@@ -272,6 +278,7 @@
 ;; Se usa para evaluar las expresiones de las variables locales (declarar)
 ;; antes de extender el ambiente, y luego servirá para los argumentos
 ;; de los procedimientos.
+;; app-exp: Evalúa el procedimiento, los argumentos y verifica que sea una cerradura, si no, da error.
 
 (define eval-rands
   (lambda (rands env)
