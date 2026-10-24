@@ -95,11 +95,20 @@
 ;; Datatype del ambiente:
 ;;  - vacio: ambiente sin variables.
 ;;  - extendido: lista de símbolos, lista de valores y el ambiente anterior.
+;;  - recursivo-extendido: Lista de nombres de procedimientos,lista de listas de parámetros,
+;;  lista de cuerpos de las funciones y el ambiente anterior
+
 (define-datatype ambiente ambiente?
   (vacio)
   (extendido (syms (list-of symbol?))
                        (vals (list-of scheme-value?))
+                       (env ambiente?))
+  (recursivo-extendido (proc-names (list-of symbol?))
+                       (idss (list-of (list-of symbol?)))
+                       (bodies (list-of expresion?))
                        (env ambiente?)))
+                                   
+   
 
 ;; Datatype del valor de un procedimiento (ProcVal). Una cerradura guarda:
 ;;  - lista-ID: la lista de parámetros del procedimiento.
@@ -146,18 +155,32 @@
   )
 
 ;; Recibe un ambiente y un símbolo; retorna el valor de la variable.
+;: Si no está en un ambiente recursivo-extendido y coincide con un procedimiento
+;; retorna una cerradura que empaqueta el ambiente recursivo completo.
 ;; Si no está en el ambiente actual la busca en el anterior, y si
 ;; llega al ambiente vacío lanza el error de variable inexistente.
+
+
 (define apply-env
   (lambda (env sym)
     (cases ambiente env
       (vacio ()
                         (eopl:error 'apply-env "Error, la variable no existe ~s" sym))
-      (extendido (syms vals env)
+      (extendido (syms vals envF)
                            (let ((pos (list-find-position sym syms)))
                              (if (number? pos)
                                  (list-ref vals pos)
-                                 (apply-env env sym)))))))
+                                 (apply-env envF sym))))
+    
+    (recursivo-extendido (proc-names idss bodies envF)
+                         (let ((pos (list-find-position sym proc-names)))
+                           (if (number? pos)
+                               (cerradura (list-ref idss pos)
+                                        (list-ref bodies pos)
+                                        env)
+                               (apply-env envF sym)))))))
+
+
 
 ;; Retorna el ambiente inicial con las variables @a @b @c @d @e
 ;; y los valores 1 2 3 "hola" "FLP".
@@ -245,6 +268,10 @@
 ;; Recibe una expresión y un ambiente; retorna el valor de la expresión.
 ;; Es el corazón del interpretador: decide qué hacer según el tipo
 ;; de expresión (número, texto, variable o primitiva).
+;; app-exp: Evalúa el procedimiento, los argumentos y verifica que sea una cerradura, si no, da error.
+;; declararRec-exp : Extiende el ambiente con recursivo-extendido, para permitir 
+;; la recursividad en las funciones y evalúa el cuerpo.
+
 (define evaluar-expresion
   (lambda (exp env)
     (cases expresion exp
@@ -276,17 +303,22 @@
                      (apply-procedure proc args)
                      (eopl:error 'evaluar-expresion
                                  "se aplico algo que no es un procedimiento ~s" proc))))
-     
-                     
+
+           
       (procedimiento-ex (ids cuerpo)
-                        (cerradura ids cuerpo env)))))
+                        (cerradura ids cuerpo env))
+      
+      (declararRec-exp (proc-names idss bodies cuerpo)
+                       (evaluar-expresion cuerpo
+                                       (recursivo-extendido
+                                        proc-names idss bodies env))))))
 
 ;; Recibe una lista de operandos (expresiones) y un ambiente; retorna la
 ;; lista con el valor de cada operando, evaluado en ese ambiente.
 ;; Se usa para evaluar las expresiones de las variables locales (declarar)
 ;; antes de extender el ambiente, y luego servirá para los argumentos
 ;; de los procedimientos.
-;; app-exp: Evalúa el procedimiento, los argumentos y verifica que sea una cerradura, si no, da error.
+
 
 (define eval-rands
   (lambda (rands env)
