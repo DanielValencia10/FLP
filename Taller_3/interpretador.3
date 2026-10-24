@@ -268,6 +268,10 @@
 ;; Recibe una expresión y un ambiente; retorna el valor de la expresión.
 ;; Es el corazón del interpretador: decide qué hacer según el tipo
 ;; de expresión (número, texto, variable o primitiva).
+;; app-exp: Evalúa el procedimiento, los argumentos y verifica que sea una cerradura, si no, da error.
+;; declararRec-exp : Extiende el ambiente con recursivo-extendido, para permitir 
+;; la recursividad en las funciones y evalúa el cuerpo.
+
 (define evaluar-expresion
   (lambda (exp env)
     (cases expresion exp
@@ -302,14 +306,19 @@
 
            
       (procedimiento-ex (ids cuerpo)
-                        (cerradura ids cuerpo env)))))
+                        (cerradura ids cuerpo env))
+      
+      (declararRec-exp (proc-names idss bodies cuerpo)
+                       (evaluar-expresion cuerpo
+                                       (recursivo-extendido
+                                        proc-names idss bodies env))))))
 
 ;; Recibe una lista de operandos (expresiones) y un ambiente; retorna la
 ;; lista con el valor de cada operando, evaluado en ese ambiente.
 ;; Se usa para evaluar las expresiones de las variables locales (declarar)
 ;; antes de extender el ambiente, y luego servirá para los argumentos
 ;; de los procedimientos.
-;; app-exp: Evalúa el procedimiento, los argumentos y verifica que sea una cerradura, si no, da error.
+
 
 (define eval-rands
   (lambda (rands env)
