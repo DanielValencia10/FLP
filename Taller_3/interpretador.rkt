@@ -383,6 +383,7 @@
    finEval
  }"
 )
+
 ;b)Primero evaluamos que el número sea mayor a cero, si no, retornamos cero, esa será nuestra base.
 ;Para los números que sean mayores a cero, lo sumamos junto al mismo programa pasándole como parámetro el mismo número menos 1,
 ;que volverá a realizar la validación base y, cuando termine, sumará todos los números resultados de cada recursión.
@@ -394,6 +395,21 @@
  )
  {
    evaluar @sumaNaturales( 5 )
+   finEval
+ }"
+)
+
+;c)Primero evaluamos que ambos números sean mayores a cero, si no, retornamos cero, partiendo de ahí.
+;Iniciamos con el ejemplo de una vez: por parámetros ingresamos 4 y 3 -> (4,3).
+;Cogemos el cuatro y lo sumamos con el resultado del programa, pasándole como parámetros 4 y 3-1 -> (4,2).
+;Ahí nos retorna otro cuatro y ese lo sumamos con el programa evaluado nuevamente, y así hasta que el segundo parámetro sea cero, acabe la recursión y nos dé como resultado 4+4+4 = 12.
+
+(define programa_c
+"declarar-rec (
+   @multiplicar(@a,@b) = Si (@b > 0) {(@a + evaluar @multiplicar(@a,(@b ~ 1)) finEval)} sino {0};
+ )
+ {
+   evaluar @multiplicar( 4,3 )
    finEval
  }"
 )
