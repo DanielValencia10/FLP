@@ -383,3 +383,17 @@
    finEval
  }"
 )
+;b)Primero evaluamos que el número sea mayor a cero, si no, retornamos cero, esa será nuestra base.
+;Para los números que sean mayores a cero, lo sumamos junto al mismo programa pasándole como parámetro el mismo número menos 1,
+;que volverá a realizar la validación base y, cuando termine, sumará todos los números resultados de cada recursión.
+;Por ejemplo, con n=5, como es mayor a 0, 5 lo sumamos con el programa(5-1), eso nos retornará 4 sumado con el programa(4-1), y así hasta que llegue 1-1=0, se acabe la recursión y sume 5+4+3+2+1 igual a 15.
+
+(define programa_b
+"declarar-rec (
+   @sumaNaturales(@n) = Si (@n > 0) {(@n + evaluar @sumaNaturales((@n ~ 1)) finEval)} sino {0};
+ )
+ {
+   evaluar @sumaNaturales( 5 )
+   finEval
+ }"
+)
