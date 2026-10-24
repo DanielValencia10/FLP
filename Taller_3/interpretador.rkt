@@ -413,3 +413,38 @@
    finEval
  }"
 )
+
+;; d) sumaParesRango
+;; El programa divide el problema en dos partes: verificar si un número es par
+;; (@espar?) y recorrer un rango sumando solo los pares (@sumaParesRango).
+;; No usa módulo ni división: solo restas y comparaciones.
+;;
+;; @espar?(n): sigue la definición inductiva de los múltiplos de 2. Un número n
+;; es par si n = 0 (caso base, retorna 1) o si n - 2 es par. Antes de llamarse,
+;; comprueba que n - 2 no sea negativo; si lo fuera (les pasa a los impares,
+;; que llegan a 1), el número no es par y retorna 0 (falso).
+;;
+;; @sumaParesRango(a,b): mientras se cumpla a <= b, evalúa si a es par con
+;; @espar?; si lo es, suma a con el resultado de recorrer el rango desde el
+;; siguiente número (add1 de a, con el mismo b); si no, simplemente pasa al
+;; siguiente sin sumar. Cuando a supera a b, la condición a <= b deja de
+;; cumplirse, la recursión termina y retorna 0.
+;;
+;; Ejemplo con el rango (2,7):
+;; Para el 2: @espar? confirma que es par, así que se suma con el resultado de
+;; evaluar el programa desde el siguiente número (3).
+;; Para el 3: @espar? dice que no es par, no se suma y se pasa al 4.
+;; Para el 4: es par, se suma (4 + ...). El 5 se ignora y el 6 se suma.
+;; Al llegar al 8, como 8 es mayor que 7 (@b), termina y retorna 0.
+;; La recursión junta lo acumulado: 2 + 4 + 6 + 0 = 12.
+
+(define programa_d
+"declarar-rec (
+   @espar?(@n) = Si (@n == 0) {1} sino { Si ((@n ~ 2) >= 0) { evaluar @espar?((@n ~ 2)) finEval } sino {0} };
+   @sumaParesRango(@a,@b) = Si (@a <= @b) { Si evaluar @espar?(@a) finEval {(@a + evaluar @sumaParesRango(add1(@a),@b) finEval)} sino {evaluar @sumaParesRango(add1(@a),@b) finEval}} sino {0};
+ )
+ {
+   evaluar @sumaParesRango( 2,7 )
+   finEval
+ }"
+)
