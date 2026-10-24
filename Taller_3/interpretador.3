@@ -95,6 +95,9 @@
 ;; Datatype del ambiente:
 ;;  - vacio: ambiente sin variables.
 ;;  - extendido: lista de símbolos, lista de valores y el ambiente anterior.
+;;  - recursivo-extendido: Lista de nombres de procedimientos,lista de listas de parámetros,
+;;  lista de cuerpos de las funciones y el ambiente anterior
+
 (define-datatype ambiente ambiente?
   (vacio)
   (extendido (syms (list-of symbol?))
@@ -152,8 +155,12 @@
   )
 
 ;; Recibe un ambiente y un símbolo; retorna el valor de la variable.
+;: Si no está en un ambiente recursivo-extendido y coincide con un procedimiento
+;; retorna una cerradura que empaqueta el ambiente recursivo completo.
 ;; Si no está en el ambiente actual la busca en el anterior, y si
 ;; llega al ambiente vacío lanza el error de variable inexistente.
+
+
 (define apply-env
   (lambda (env sym)
     (cases ambiente env
@@ -172,6 +179,8 @@
                                         (list-ref bodies pos)
                                         env)
                                (apply-env envF sym)))))))
+
+
 
 ;; Retorna el ambiente inicial con las variables @a @b @c @d @e
 ;; y los valores 1 2 3 "hola" "FLP".
