@@ -33,7 +33,7 @@
    (expresion ("Si" expresion "{" expresion "}" "sino" "{" expresion "}") condicional-exp)
    (expresion ("declarar" "(" (arbno identifier "=" expresion ";") ")" "{" expresion "}") variableLocal-exp)
    (expresion ("procedimiento" "(" (separated-list identifier ",") ")" "{" expresion "}") procedimiento-ex)
-   (expresion ("evaluar" expresion "(" (separated-list expresion ",") ")" "finEval") app-exp)    
+   (expresion ("evaluar" expresion "(" (separated-list expresion ",") ")" "finEval") app-exp) 
    (primitiva-binaria ("+") primitiva-suma)
    (primitiva-binaria ("~") primitiva-resta)
    (primitiva-binaria ("/") primitiva-div)
@@ -218,6 +218,20 @@
   )
 
 ;; ============================================================
+;; apply-procedure
+;; ============================================================
+
+(define apply-procedure
+  (lambda (proc args)
+    (cases procVal proc
+      (cerradura (lista-ID exp amb)
+               (evaluar-expresion exp (extend-env lista-ID args amb))))))
+
+;;Recibe una cerradura (procVal) y la lista de argumentos ya evaluados, y retorna el resultado
+;;a evaluar el cuerpo del procedimiento en el ambiente guardado en la cerradura, extendido con
+;;los parámteros ligados a los argumentos.
+
+;; ============================================================
 ;; Evaluación
 ;; ============================================================
 
@@ -248,6 +262,8 @@
                            (evaluar-expresion cuerpo
                                               (extend-env ids args env))))
 
+      
+                     
       (procedimiento-ex (ids cuerpo)
                         (cerradura ids cuerpo env)))))
 
