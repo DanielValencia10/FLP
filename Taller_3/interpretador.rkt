@@ -33,7 +33,12 @@
    (expresion ("Si" expresion "{" expresion "}" "sino" "{" expresion "}") condicional-exp)
    (expresion ("declarar" "(" (arbno identifier "=" expresion ";") ")" "{" expresion "}") variableLocal-exp)
    (expresion ("procedimiento" "(" (separated-list identifier ",") ")" "{" expresion "}") procedimiento-ex)
-   (expresion ("evaluar" expresion "(" (separated-list expresion ",") ")" "finEval") app-exp) 
+   (expresion ("evaluar" expresion "(" (separated-list expresion ",") ")" "finEval") app-exp)
+
+   ;nueva gramática
+
+   (expresion ("declarar-rec" "(" (arbno identifier "(" (separated-list identifier ",") ")" "=" expresion ";") ")" "{" expresion"}") declararRec-exp)
+   
    (primitiva-binaria ("+") primitiva-suma)
    (primitiva-binaria ("~") primitiva-resta)
    (primitiva-binaria ("/") primitiva-div)
@@ -231,6 +236,8 @@
 ;;a evaluar el cuerpo del procedimiento en el ambiente guardado en la cerradura, extendido con
 ;;los parámteros ligados a los argumentos.
 
+
+
 ;; ============================================================
 ;; Evaluación
 ;; ============================================================
@@ -269,6 +276,7 @@
                      (apply-procedure proc args)
                      (eopl:error 'evaluar-expresion
                                  "se aplico algo que no es un procedimiento ~s" proc))))
+     
                      
       (procedimiento-ex (ids cuerpo)
                         (cerradura ids cuerpo env)))))
