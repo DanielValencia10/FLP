@@ -357,8 +357,29 @@
       )
      )
 
+
+
 ;; Recibe un programa escrito como texto y retorna el resultado de evaluarlo.
 ;; Se usa para hacer pruebas sin entrar al ciclo interactivo.
 (define probar
   (lambda (texto)
     (evaluar-programa (scan&parse texto))))
+
+;a) primero necesitamos saber qué tan grande es el número para buscar su representación en base 10
+;por ejemplo, si ingresamos el 147, el programa tiene que calcular que como son tres números le toca usar el 100. 
+;Entonces, cogemos ese 147 y le empezamos a restar 100.
+;Como solo se lo puedo restar una vez, ahí ya tengo guardado mi primer resultado , que es un 1.
+;me quedan el 47, Ahora con ese numero, vuelvo a aplicar la misma lógica desde el principio, el programa ve que es de dos dígitos, así que le toca usar el 10.
+;Le resto 10 todas las veces que pueda al 47, que van a ser 4 veces, y me termina sobrando un 7. Y ya por último, con ese 7, la escala que toca es el 1, así que lo resto 7 veces hasta que me quede en la nada, en cero.
+;Al final, con recursividad es que el programa va a ir arrastrando y sumando ese 1, ese 4 y ese 7 que fuimos sacando en cada pason y que como resultado nos de 12.
+
+(define programa_a
+"declarar-rec (
+   @ndigits?(@n) = Si (@n >= 10) {(10 * evaluar @ndigits?((@n / 10)) finEval)} sino {1};
+   @sumarDigitos(@n) = Si (@n >= evaluar @ndigits?(@n) finEval) {(1 + evaluar @sumarDigitos((@n ~ evaluar @ndigits?(@n) finEval)) finEval)} sino {0};
+ )
+ {
+   evaluar @sumarDigitos( 147 )
+   finEval
+ }"
+)
