@@ -18,7 +18,7 @@
   (number ("-" digit (arbno digit)) number)
   (number (digit (arbno digit) "." digit (arbno digit)) number)
   (number ("-" digit (arbno digit) "." digit (arbno digit)) number)
-  (text (letter (arbno (or letter digit "_"))) string)
+  (text ((or letter "_" )(arbno (or letter digit "_" ":"))) string)
   )
 )
 
@@ -365,13 +365,13 @@
   (lambda (texto)
     (evaluar-programa (scan&parse texto))))
 
-;a) primero necesitamos saber qué tan grande es el número para buscar su representación en base 10
-;por ejemplo, si ingresamos el 147, el programa tiene que calcular que como son tres números le toca usar el 100. 
-;Entonces, cogemos ese 147 y le empezamos a restar 100.
-;Como solo se lo puedo restar una vez, ahí ya tengo guardado mi primer resultado , que es un 1.
-;me quedan el 47, Ahora con ese numero, vuelvo a aplicar la misma lógica desde el principio, el programa ve que es de dos dígitos, así que le toca usar el 10.
-;Le resto 10 todas las veces que pueda al 47, que van a ser 4 veces, y me termina sobrando un 7. Y ya por último, con ese 7, la escala que toca es el 1, así que lo resto 7 veces hasta que me quede en la nada, en cero.
-;Al final, con recursividad es que el programa va a ir arrastrando y sumando ese 1, ese 4 y ese 7 que fuimos sacando en cada pason y que como resultado nos de 12.
+;;a) primero necesitamos saber qué tan grande es el número para buscar su representación en base 10
+;;por ejemplo, si ingresamos el 147, el programa tiene que calcular que como son tres números le toca usar el 100. 
+;;Entonces, cogemos ese 147 y le empezamos a restar 100.
+;;Como solo se lo puedo restar una vez, ahí ya tengo guardado mi primer resultado , que es un 1.
+;;me quedan el 47, Ahora con ese numero, vuelvo a aplicar la misma lógica desde el principio, el programa ve que es de dos dígitos, así que le toca usar el 10.
+;;Le resto 10 todas las veces que pueda al 47, que van a ser 4 veces, y me termina sobrando un 7. Y ya por último, con ese 7, la escala que toca es el 1, así que lo resto 7 veces hasta que me quede en la nada, en cero.
+;;Al final, con recursividad es que el programa va a ir arrastrando y sumando ese 1, ese 4 y ese 7 que fuimos sacando en cada pason y que como resultado nos de 12.
 
 (define programa_a
 "declarar-rec (
@@ -419,10 +419,10 @@
  }"
 )
 
-;c)Primero evaluamos que ambos números sean mayores a cero, si no, retornamos cero, partiendo de ahí.
-;Iniciamos con el ejemplo de una vez: por parámetros ingresamos 4 y 3 -> (4,3).
-;Cogemos el cuatro y lo sumamos con el resultado del programa, pasándole como parámetros 4 y 3-1 -> (4,2).
-;Ahí nos retorna otro cuatro y ese lo sumamos con el programa evaluado nuevamente, y así hasta que el segundo parámetro sea cero, acabe la recursión y nos dé como resultado 4+4+4 = 12.
+;;c)Primero evaluamos que ambos números sean mayores a cero, si no, retornamos cero, partiendo de ahí.
+;;Iniciamos con el ejemplo de una vez: por parámetros ingresamos 4 y 3 -> (4,3).
+;;Cogemos el cuatro y lo sumamos con el resultado del programa, pasándole como parámetros 4 y 3-1 -> (4,2).
+;;Ahí nos retorna otro cuatro y ese lo sumamos con el programa evaluado nuevamente, y así hasta que el segundo parámetro sea cero, acabe la recursión y nos dé como resultado 4+4+4 = 12.
 
 (define programa_c
 "declarar-rec (
@@ -436,32 +436,34 @@
 
 ;; d) sumaParesRango
 ;; El programa divide el problema en dos partes: verificar si un número es par
-;; (@espar?) y recorrer un rango sumando solo los pares (@sumaParesRango).
-;; No usa módulo ni división: solo restas y comparaciones.
+;; (@esPar?) y recorrer un rango sumando solo los pares (@sumaParesRango).
+;; No usa módulo ni división: solo restas, comparaciones, add1 y la suma del
+;; acumulado.
 ;;
-;; @espar?(n): sigue la definición inductiva de los múltiplos de 2. Un número n
+;; @esPar?(n): sigue la definición inductiva de los múltiplos de 2. Un número n
 ;; es par si n = 0 (caso base, retorna 1) o si n - 2 es par. Antes de llamarse,
 ;; comprueba que n - 2 no sea negativo; si lo fuera (les pasa a los impares,
 ;; que llegan a 1), el número no es par y retorna 0 (falso).
 ;;
 ;; @sumaParesRango(a,b): mientras se cumpla a <= b, evalúa si a es par con
-;; @espar?; si lo es, suma a con el resultado de recorrer el rango desde el
+;; @esPar?; si lo es, suma a con el resultado de recorrer el rango desde el
 ;; siguiente número (add1 de a, con el mismo b); si no, simplemente pasa al
 ;; siguiente sin sumar. Cuando a supera a b, la condición a <= b deja de
 ;; cumplirse, la recursión termina y retorna 0.
 ;;
 ;; Ejemplo con el rango (2,7):
-;; Para el 2: @espar? confirma que es par, así que se suma con el resultado de
+;; Para el 2: @esPar? confirma que es par, así que se suma con el resultado de
 ;; evaluar el programa desde el siguiente número (3).
-;; Para el 3: @espar? dice que no es par, no se suma y se pasa al 4.
-;; Para el 4: es par, se suma (4 + ...). El 5 se ignora y el 6 se suma.
+;; Para el 3: @esPar? dice que no es par, no se suma y se pasa al 4.
+;; Para el 4: es par, se suma (4 + ...). El 5 se ignora, el 6 se suma y el 7
+;; se ignora.
 ;; Al llegar al 8, como 8 es mayor que 7 (@b), termina y retorna 0.
 ;; La recursión junta lo acumulado: 2 + 4 + 6 + 0 = 12.
 
 (define programa_d
 "declarar-rec (
-   @espar?(@n) = Si (@n == 0) {1} sino { Si ((@n ~ 2) >= 0) { evaluar @espar?((@n ~ 2)) finEval } sino {0} };
-   @sumaParesRango(@a,@b) = Si (@a <= @b) { Si evaluar @espar?(@a) finEval {(@a + evaluar @sumaParesRango(add1(@a),@b) finEval)} sino {evaluar @sumaParesRango(add1(@a),@b) finEval}} sino {0};
+   @esPar?(@n) = Si (@n == 0) {1} sino { Si ((@n ~ 2) >= 0) { evaluar @esPar?((@n ~ 2)) finEval } sino {0} };
+   @sumaParesRango(@a,@b) = Si (@a <= @b) { Si evaluar @esPar?(@a) finEval {(@a + evaluar @sumaParesRango(add1(@a),@b) finEval)} sino {evaluar @sumaParesRango(add1(@a),@b) finEval}} sino {0};
  )
  {
    evaluar @sumaParesRango( 2,7 )
