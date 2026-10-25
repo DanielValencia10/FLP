@@ -32,7 +32,7 @@
    (expresion (primitiva-unaria "("expresion ")") primapp-un-exp)
    (expresion ("Si" expresion "{" expresion "}" "sino" "{" expresion "}") condicional-exp)
    (expresion ("declarar" "(" (arbno identifier "=" expresion ";") ")" "{" expresion "}") variableLocal-exp)
-;; Punto 7:
+;; Punto 6:
    ; Gramática BNF
    ;<expresion> ::= procedimiento ( { <identificador> }*(,) ) { <expresion> }
    ;             procedimiento-ex (ids cuerpo)
@@ -128,7 +128,7 @@
 ;;  - exp: el cuerpo del procedimiento (sin evaluar).
 ;;  - amb: el ambiente donde se declaró el procedimiento.
 ;; Se retorna al evaluar un procedimiento y se usa al aplicarlo.
-;; Punto 7
+;; Punto 6
 (define-datatype procVal procVal?
   (cerradura
      (lista-ID(list-of symbol?))
@@ -168,7 +168,7 @@
   )
 
 ;; Recibe un ambiente y un símbolo; retorna el valor de la variable.
-;: Si no está en un ambiente recursivo-extendido y coincide con un procedimiento
+;; Si no está en un ambiente recursivo-extendido y coincide con un procedimiento
 ;; retorna una cerradura que empaqueta el ambiente recursivo completo.
 ;; Si no está en el ambiente actual la busca en el anterior, y si
 ;; llega al ambiente vacío lanza el error de variable inexistente.
@@ -219,11 +219,11 @@
   (lambda (boolean-exp)
     (if boolean-exp 1 0)))
 
-;; Recibe un valor y retorna #f si es 0 y #t en cualquier otro caso.
-;; Define qué es verdadero y qué es falso en el lenguaje.
+;; Recibe un valor y retorna #f si es el número 0 (entero o decimal, 0 o 0.0) y #t en
+;; cualquier otro caso. Define qué es verdadero y qué es falso en el lenguaje.
 (define valor-verdad?
   (lambda (exp)
-    (not (eqv? exp 0))))
+    (not (and (number? exp) (zero? exp)))))
 
 ;; ============================================================
 ;; Primitivas
@@ -326,7 +326,7 @@
                      (eopl:error 'evaluar-expresion
                                  "se aplico algo que no es un procedimiento ~s" proc))))
 
-;; Punto 7: Creación de procedimientos
+;; Punto 6: Creación de procedimientos
       (procedimiento-ex (ids cuerpo)
                         (cerradura ids cuerpo env))
 
@@ -412,6 +412,7 @@
 ;;   p = 1   -> 7 restas -> queda 0
 ;;   total de restas = 1 + 4 + 7 = 12
 
+;; Prueba rápida: (probar programa_a)
 (define programa_a
 "declarar-rec (
    @potencia10(@n) = Si (@n >= 10) {(10 * evaluar @potencia10((@n / 10)) finEval)} sino {1};
@@ -422,10 +423,14 @@
    finEval
  }"
 )
+;; Texto limpio de programa_a: copiar SOLO la línea de abajo y pegarla en el intérprete (-->)
+#|
+declarar-rec ( @potencia10(@n) = Si (@n >= 10) {(10 * evaluar @potencia10((@n / 10)) finEval)} sino {1}; @sumarDigitos(@n) = Si (@n >= evaluar @potencia10(@n) finEval) {(1 + evaluar @sumarDigitos((@n ~ evaluar @potencia10(@n) finEval)) finEval)} sino {0}; ) { evaluar @sumarDigitos( 147 ) finEval }
+|#
 
-;; PUNTO 9.b5 y PUNTO 9. b10) @sumaNaturales(n): calcula la suma de los primeros n enteros positivos
-;; de forma recursiva. Los dos programas usan el mismo procedimiento; solo cambia
-;; el valor con el que se llama (n=5 y n=10).
+;; PUNTO 9.b) @sumaNaturales(n): calcula la suma de los primeros n enteros positivos
+;; de forma recursiva. Los dos programas (programa_b5 y programa_b10) usan el mismo
+;; procedimiento; solo cambia el valor con el que se llama (n=5 y n=10).
 ;;
 ;; Caso base: si n no es mayor que 0, retorna 0. Es el neutro de la suma, así que
 ;; no altera el total. Esta guarda también evita que la recursión baje para siempre
@@ -438,6 +443,7 @@
 ;; Al regresar, las sumas se juntan: 5 + 4 + 3 + 2 + 1 + 0 = 15.
 ;; Con n=10 ocurre lo mismo hasta 10 + 9 + ... + 1 + 0 = 55.
 
+;; Prueba rápida: (probar programa_b5)
 (define programa_b5
 "declarar-rec (
    @sumaNaturales(@n) = Si (@n > 0) {(@n + evaluar @sumaNaturales((@n ~ 1)) finEval)} sino {0};
@@ -447,7 +453,12 @@
    finEval
  }"
 )
+;; Texto limpio de programa_b5: copiar SOLO la línea de abajo y pegarla en el intérprete (-->)
+#|
+declarar-rec ( @sumaNaturales(@n) = Si (@n > 0) {(@n + evaluar @sumaNaturales((@n ~ 1)) finEval)} sino {0}; ) { evaluar @sumaNaturales( 5 ) finEval }
+|#
 
+;; Prueba rápida: (probar programa_b10)
 (define programa_b10
 "declarar-rec (
    @sumaNaturales(@n) = Si (@n > 0) {(@n + evaluar @sumaNaturales((@n ~ 1)) finEval)} sino {0};
@@ -457,6 +468,10 @@
    finEval
  }"
 )
+;; Texto limpio de programa_b10: copiar SOLO la línea de abajo y pegarla en el intérprete (-->)
+#|
+declarar-rec ( @sumaNaturales(@n) = Si (@n > 0) {(@n + evaluar @sumaNaturales((@n ~ 1)) finEval)} sino {0}; ) { evaluar @sumaNaturales( 10 ) finEval }
+|#
 
 ;; PUNTO 9.c) @multiplicar(a,b): calcula el producto de dos enteros no negativos mediante
 ;; sumas sucesivas, sin usar la primitiva de multiplicación (*) en ningún punto.
@@ -474,6 +489,7 @@
 ;;   @multiplicar(4,0) = 0   (caso base)
 ;; Al regresar: 4 + 4 + 4 + 0 = 12.
 
+;; Prueba rápida: (probar programa_c)
 (define programa_c
 "declarar-rec (
    @multiplicar(@a,@b) = Si (@b > 0) {(@a + evaluar @multiplicar(@a,(@b ~ 1)) finEval)} sino {0};
@@ -483,6 +499,10 @@
    finEval
  }"
 )
+;; Texto limpio de programa_c: copiar SOLO la línea de abajo y pegarla en el intérprete (-->)
+#|
+declarar-rec ( @multiplicar(@a,@b) = Si (@b > 0) {(@a + evaluar @multiplicar(@a,(@b ~ 1)) finEval)} sino {0}; ) { evaluar @multiplicar( 4,3 ) finEval }
+|#
 
 ;; PUNTO 9.d) sumaParesRango
 ;; El programa divide el problema en dos partes: verificar si un número es par
@@ -510,6 +530,7 @@
 ;; Al llegar al 8, como 8 es mayor que 7 (@b), termina y retorna 0.
 ;; La recursión junta lo acumulado: 2 + 4 + 6 + 0 = 12.
 
+;; Prueba rápida: (probar programa_d)
 (define programa_d
 "declarar-rec (
    @esPar?(@n) = Si (@n == 0) {1} sino { Si ((@n ~ 2) >= 0) { evaluar @esPar?((@n ~ 2)) finEval } sino {0} };
@@ -520,6 +541,10 @@
    finEval
  }"
 )
+;; Texto limpio de programa_d: copiar SOLO la línea de abajo y pegarla en el intérprete (-->)
+#|
+declarar-rec ( @esPar?(@n) = Si (@n == 0) {1} sino { Si ((@n ~ 2) >= 0) { evaluar @esPar?((@n ~ 2)) finEval } sino {0} }; @sumaParesRango(@a,@b) = Si (@a <= @b) { Si evaluar @esPar?(@a) finEval {(@a + evaluar @sumaParesRango(add1(@a),@b) finEval)} sino {evaluar @sumaParesRango(add1(@a),@b) finEval}} sino {0}; ) { evaluar @sumaParesRango( 2,7 ) finEval }
+|#
 
 ;; PUNTO 9.e) @saludar: decorador
 ;; El programa usa el concepto de decorador: un procedimiento que recibe otro
@@ -556,8 +581,9 @@
 ;; Luego concat le pone "Hola:" delante, y el resultado es
 ;; "Hola:Sofia_Sara_y_Daniel".
 
+;; Prueba rápida: (probar programa_e)
 (define programa_e
-  "declarar (
+"declarar (
      @integrantes = procedimiento () {\"Sofia_Sara_y_Daniel\"};
      @saludar = procedimiento (@proSaludar) {procedimiento () {(\"Hola:\" concat evaluar @proSaludar() finEval)}};
    )
@@ -568,8 +594,12 @@
       }
    }"
 )
+;; Texto limpio de programa_e: copiar SOLO la línea de abajo y pegarla en el intérprete (-->)
+#|
+declarar ( @integrantes = procedimiento () {"Sofia_Sara_y_Daniel"}; @saludar = procedimiento (@proSaludar) {procedimiento () {("Hola:" concat evaluar @proSaludar() finEval)}}; ) { declarar (@decorate = evaluar @saludar(@integrantes) finEval;) { evaluar @decorate( ) finEval } }
+|#
 
-;; PUNTO 9.f : @saludar con mensaje al final: decorador con parámetro
+;; PUNTO 9.f) @saludar con mensaje al final: decorador con parámetro
 ;; El programa extiende el concepto de decorador del punto e: un procedimiento
 ;; que recibe otro procedimiento y retorna uno nuevo que, además de agregar el
 ;; prefijo "Hola:" al inicio, acepta un argumento adicional (@finalMsg) para
@@ -580,8 +610,8 @@
 
 ;; @saludar(@proSaludar): recibe un procedimiento, @proSaludar, y no ejecuta
 ;; nada por sí mismo: retorna un procedimiento nuevo que espera el parámetro
-;; @finalmsg. Al invocarse, llama a @proSaludar con evaluar @proSaludar() finEval,
-;; le concatena "Hola:" adelante y luego concatena el valor de @finalmsg al
+;; @finalMsg. Al invocarse, llama a @proSaludar con evaluar @proSaludar() finEval,
+;; le concatena "Hola:" adelante y luego concatena el valor de @finalMsg al
 ;; final mediante dos operaciones concat anidadas.
 
 ;; @decorate: no se escribe a mano, se obtiene llamando a @saludar con
@@ -595,15 +625,16 @@
 ;; @integrantes si se definiera en el mismo declarar. Por eso va en el
 ;; declarar interior.
 
-;; Al invocar @decorate("_ProfesoresFLP"), el parámetro @finalmsg recibe el
+;; Al invocar @decorate("_ProfesoresFLP"), el parámetro @finalMsg recibe el
 ;; texto "_ProfesoresFLP". El cuerpo de la cerradura busca @proSaludar en el
 ;; ambiente guardado y lo llama, obteniendo "Robinson_y_Sara".
 ;; El primer concat genera "Hola:Robinson_y_Sara", y el segundo concat le
 ;; añade "_ProfesoresFLP" al final, dando como resultado
 ;; "Hola:Robinson_y_Sara_ProfesoresFLP".
 
+;; Prueba rápida: (probar programa_f)
 (define programa_f
-  "declarar (
+"declarar (
      @integrantes = procedimiento () {\"Robinson_y_Sara\"};
      @saludar = procedimiento (@proSaludar) { procedimiento (@finalMsg) {((\"Hola:\" concat evaluar @proSaludar() finEval) concat @finalMsg)}};
    )
@@ -614,6 +645,10 @@
       }
    }"
 )
+;; Prueba para el intérprete (-->)
+#|
+declarar ( @integrantes = procedimiento () {"Robinson_y_Sara"}; @saludar = procedimiento (@proSaludar) { procedimiento (@finalMsg) {(("Hola:" concat evaluar @proSaludar() finEval) concat @finalMsg)}}; ) { declarar (@decorate = evaluar @saludar(@integrantes) finEval;) { evaluar @decorate("_ProfesoresFLP") finEval } }
+|#
   
   
   
