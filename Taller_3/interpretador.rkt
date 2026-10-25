@@ -9,6 +9,18 @@
 ;; https://github.com/DanielValencia10/FLP.git
 
 
+;; ============================================================
+;; Especificación léxica (Punto 1)
+;; Define los tokens (las "palabras" válidas) del lenguaje:
+;;  - white-sp: espacios, tabuladores y saltos de línea; se ignoran (skip).
+;;  - comment: comentarios de una línea que empiezan con // ; se ignoran (skip).
+;;  - identifier: variables que inician con @, seguido de una letra y luego
+;;    letras, dígitos o ? (ejemplos: @x, @sumaNaturales, @esPar?). Se guarda como symbol.
+;;  - number: enteros y decimales, positivos y negativos (ejemplos: 5, -5, 2.5, -2.5).
+;;  - text: contenido de un texto SIN las comillas (las comillas se escapan en la
+;;    gramática). Inicia con letra (o _) y sigue con letras, dígitos, _ o : (el : permite
+;;    textos como "Hola:"). Se guarda como string.
+;; ============================================================
 (define lexica
 '(
   (white-sp (whitespace) skip)
@@ -22,15 +34,39 @@
   )
 )
 
+;; ============================================================
+;; Gramática (Puntos 1, 4, 5, 6, 7 y 8)
+;; Cada línea de la gramática tiene la forma (lado-izquierdo (lado-derecho) nombre-variante);
+;; sllgen genera un datatype a partir de ella. La notación infija exige paréntesis:
+;; (a op b). La BNF de cada regla está comentada justo encima de ella.
+;; ============================================================
 (define gramatica
  '(
+   ;; Punto 1: BNF
+   ;; <programa> ::= <expresion>
+   ;;                un-programa (exp)
    (programa (expresion) un-programa)
+   ;; Punto 1: BNF de las expresiones básicas
+   ;; <expresion> ::= <numero>                                  numero-lit (num)
+   ;;             ::= "\"" <texto> "\""                          texto-lit (txt)
+   ;;             ::= <identificador>                           var-exp (id)
    (expresion (number) numero-lit)
    (expresion ("\""text"\"") texto-lit)
    (expresion (identifier) var-exp)
+   ;; Punto 1: BNF de las primitivas aplicadas
+   ;; <expresion> ::= ( <expresion> <primitiva-binaria> <expresion> )
+   ;;                 primapp-bin-exp (exp1 prim-binaria exp2)
    (expresion ("(" expresion primitiva-binaria expresion ")") primapp-bin-exp)
+   ;; <expresion> ::= <primitiva-unaria> ( <expresion> )
+   ;;                 primapp-un-exp (prim-unaria exp)
    (expresion (primitiva-unaria "("expresion ")") primapp-un-exp)
+   ;; Punto 4: BNF del condicional
+   ;; <expresion> ::= Si <expresion> { <expresion> } sino { <expresion> }
+   ;;                 condicional-exp (test-exp true-exp false-exp)
    (expresion ("Si" expresion "{" expresion "}" "sino" "{" expresion "}") condicional-exp)
+   ;; Punto 5: BNF de las variables locales
+   ;; <expresion> ::= declarar ( { <identificador> = <expresion> ; }* ) { <expresion> }
+   ;;                 variableLocal-exp (ids exps cuerpo)
    (expresion ("declarar" "(" (arbno identifier "=" expresion ";") ")" "{" expresion "}") variableLocal-exp)
 ;; Punto 6:
    ; Gramática BNF
@@ -50,6 +86,11 @@
 
    (expresion ("declarar-rec" "(" (arbno identifier "(" (separated-list identifier ",") ")" "=" expresion ";") ")" "{" expresion"}") declararRec-exp)
    
+   ;; Punto 1: BNF de las primitivas binarias (11)
+   ;; <primitiva-binaria> ::= + (primitiva-suma) | ~ (primitiva-resta) | / (primitiva-div)
+   ;;                     ::= * (primitiva-multi) | concat (primitiva-concat)
+   ;;                     ::= > | < | >= | <= | != | ==   (primitiva-mayor, -menor, -mayor-igual,
+   ;;                         -menor-igual, -diferente, -comparador-igual)
    (primitiva-binaria ("+") primitiva-suma)
    (primitiva-binaria ("~") primitiva-resta)
    (primitiva-binaria ("/") primitiva-div)
@@ -61,6 +102,9 @@
    (primitiva-binaria ("<=") primitiva-menor-igual)
    (primitiva-binaria ("!=") primitiva-diferente)
    (primitiva-binaria ("==") primitiva-comparador-igual)
+   ;; Punto 1: BNF de las primitivas unarias (4)
+   ;; <primitiva-unaria> ::= longitud (primitiva-longitud) | add1 (primitiva-add1)
+   ;;                    ::= sub1 (primitiva-sub1) | neg (primitiva-negacion-booleana)
    (primitiva-unaria ("longitud") primitiva-longitud)
    (primitiva-unaria ("add1") primitiva-add1)
    (primitiva-unaria ("sub1") primitiva-sub1)
@@ -229,32 +273,45 @@
 ;; Primitivas
 ;; ============================================================
 
-;; Recibe una primitiva binaria y una lista con sus dos argumentos;
-;; retorna el resultado de aplicar la operación.
+;; Recibe una primitiva binaria y una lista con sus dos argumentos ya evaluados;
+;; retorna el resultado de aplicar la operación (Punto 1). Las comparaciones retornan
+;; 1 (verdadero) o 0 (falso) mediante boolean-out.
 (define apply-primitive-bin
   (lambda (prim args)
     (cases primitiva-binaria prim
+      ;; + : suma de dos números
       (primitiva-suma () (+ (car args) (cadr args)))
+      ;; ~ : resta de dos números (la virgulilla evita confundirla con un número negativo)
       (primitiva-resta () (- (car args) (cadr args)))
+      ;; * : multiplicación de dos números
       (primitiva-multi () (* (car args) (cadr args)))
+      ;; / : división de dos números; si el divisor es 0 lanza un error controlado
       (primitiva-div () (if (= (cadr args) 0) (eopl:error 'apply-primitive-bin "division by zero") (/ (car args) (cadr args))))
+      ;; concat : une dos textos en uno solo
       (primitiva-concat () (string-append (car args) (cadr args)))
+      ;; > < >= <= : comparan dos números y retornan 1 si se cumple, 0 si no
       (primitiva-mayor () (boolean-out (> (car args) (cadr args))))
       (primitiva-menor () (boolean-out (< (car args) (cadr args))))
       (primitiva-mayor-igual () (boolean-out (>= (car args) (cadr args))))
       (primitiva-menor-igual () (boolean-out (<= (car args) (cadr args))))
+      ;; != : retorna 1 si los dos valores son distintos, 0 si son iguales
       (primitiva-diferente () (boolean-out (not (equal? (car args) (cadr args)))))
+      ;; == : retorna 1 si los dos valores son iguales, 0 si son distintos
       (primitiva-comparador-igual () (boolean-out (equal? (car args) (cadr args))))
    )))
 
-;; Recibe una primitiva unaria y una lista con su argumento;
-;; retorna el resultado de aplicar la operación.
+;; Recibe una primitiva unaria y una lista con su único argumento ya evaluado;
+;; retorna el resultado de aplicar la operación (Punto 1).
 (define apply-primitive-un
   (lambda (prim args)
     (cases primitiva-unaria prim
+      ;; add1 : suma 1 al número
       (primitiva-add1 () (+ (car args) 1))
+      ;; sub1 : resta 1 al número
       (primitiva-sub1 () (- (car args) 1))
+      ;; longitud : cantidad de caracteres del texto
       (primitiva-longitud () (string-length (car args)))
+      ;; neg : negación booleana; retorna 1 si el valor es falso (0) y 0 en cualquier otro caso
       (primitiva-negacion-booleana () (boolean-out (not (valor-verdad? (car args))))))
     )
   )
@@ -263,6 +320,11 @@
 ;; Punto 7: apply-procedure
 ;; ============================================================
 
+;; Recibe un procedimiento (cerradura) y una lista de argumentos (args) ya evaluados;
+;; valida que la cantidad de parámetros declarados sea la misma que la de argumentos.
+;; Si coinciden, evalúa el cuerpo del procedimiento en el ambiente donde fue declarado
+;; (amb) extendido con los parámetros ligados a los argumentos; si no coinciden,
+;; detiene la ejecución con un error.
 (define apply-procedure
   (lambda (proc args)
     (cases procVal proc
@@ -276,10 +338,6 @@
                    
                
 
-;; Recibe un procedimiento (cerradura) y una lista de argumentos (args),
-;; valida que el numero de parámetros declarados sea la misma cantidad que los argumentos que se pasen.
-;; Y si coinciden evalúa el cuerpo extendiendo el ambiente, y si no coinciden
-;; detiene la ejercución arrojando un error.
 
 
 
@@ -287,37 +345,54 @@
 ;; Evaluación
 ;; ============================================================
 
-;; Recibe una expresión y un ambiente; retorna el valor de la expresión.
-;; Es el corazón del interpretador: decide qué hacer según el tipo
-;; de expresión (número, texto, variable o primitiva).
-;; app-exp: Evalúa el procedimiento, los argumentos y verifica que sea una cerradura, si no, da error.
-;; declararRec-exp : Extiende el ambiente con recursivo-extendido, para permitir 
-;; la recursividad en las funciones y evalúa el cuerpo.
-
+;; Recibe una expresión (árbol de sintaxis) y un ambiente; retorna el valor de la expresión.
+;; Es el corazón del interpretador: decide qué hacer según la variante de la expresión
+;; (número, texto, variable, primitiva, condicional, variable local, creación y
+;; aplicación de procedimientos y declaración recursiva). Cada caso indica con un
+;; comentario el punto del taller que implementa.
 (define evaluar-expresion
   (lambda (exp env)
     (cases expresion exp
+      ;; Punto 1: un número se evalúa a sí mismo.
       (numero-lit (datum) datum)
+      ;; Puntos 1 y 2: una variable se busca en el ambiente con buscar-variable.
       (var-exp (id) (buscar-variable id env))
+      ;; Punto 1: un texto se evalúa a sí mismo (el valor es el texto sin comillas).
       (texto-lit (text) text)
+      ;; Punto 1: primitiva binaria. Evalúa los dos operandos y aplica la primitiva.
       (primapp-bin-exp (exp1 prim exp2)
                        (let ((args (list (eval-rand exp1 env) (eval-rand exp2 env))))
                         (apply-primitive-bin prim args)))
 
+      ;; Punto 1: primitiva unaria. Evalúa el operando y aplica la primitiva.
       (primapp-un-exp (prim exp)
                       (let ((args (list (eval-rand exp env))))
                      (apply-primitive-un prim args)))
       
+      ;; Punto 4: condicional Si test { true-exp } sino { false-exp }.
+      ;; Se evalúa primero SOLO la condición (test-exp). Con valor-verdad? se decide la rama:
+      ;; cualquier valor distinto de 0 es verdadero y únicamente el 0 es falso.
+      ;; Evaluación perezosa: se evalúa únicamente la rama elegida; la otra nunca se
+      ;; ejecuta, así que un error en la rama no elegida (por ejemplo una división por 0)
+      ;; no ocurre.
       (condicional-exp (test-exp true-exp false-exp)
                        (if (valor-verdad? (evaluar-expresion test-exp env))
                            (evaluar-expresion true-exp env)
                            (evaluar-expresion false-exp env)))
 
+      ;; Punto 5: declarar (@x = exp; ...) { cuerpo }.
+      ;; Todas las expresiones (exps) se evalúan primero en el ambiente actual (env), antes
+      ;; de crear las variables; por eso una variable recién declarada NO es visible para
+      ;; las demás expresiones del mismo declarar (hace falta anidar otro declarar).
+      ;; Luego el cuerpo se evalúa en un ambiente extendido con las nuevas variables. Si una
+      ;; variable tiene el mismo nombre que otra del ambiente exterior, la nueva la oculta
+      ;; (shadowing) mientras se evalúa el cuerpo.
       (variableLocal-exp (ids exps cuerpo)
                          (let ((args (eval-rands exps env)))
                            (evaluar-expresion cuerpo
                                               (extend-env ids args env))))
-;; Punto 7: Invocación procedimientos
+;; Punto 7: aplicación de procedimientos con evaluar ... finEval. Evalúa el procedimiento
+;; y los argumentos, y verifica que el valor sea una cerradura; si no, lanza un error.
       (app-exp (exp exps)
                (let ((proc (evaluar-expresion exp env))
                      (args (eval-rands exps env)))
@@ -326,11 +401,13 @@
                      (eopl:error 'evaluar-expresion
                                  "se aplico algo que no es un procedimiento ~s" proc))))
 
-;; Punto 6: Creación de procedimientos
+;; Punto 6: creación de procedimientos. Retorna una cerradura con los parámetros, el cuerpo
+;; sin evaluar y el ambiente donde se declaró (alcance léxico).
       (procedimiento-ex (ids cuerpo)
                         (cerradura ids cuerpo env))
 
-;; PUNTO 8: Evaluación declararRec-exp
+;; PUNTO 8: declarar-rec. Evalúa el cuerpo en un ambiente recursivo-extendido que permite
+;; que los procedimientos se llamen a sí mismos (recursión).
       (declararRec-exp (proc-names idss bodies cuerpo)
                        (evaluar-expresion cuerpo
                                        (recursivo-extendido
@@ -412,18 +489,7 @@
 ;;   p = 1   -> 7 restas -> queda 0
 ;;   total de restas = 1 + 4 + 7 = 12
 
-;; Prueba rápida: (probar programa_a)
-(define programa_a
-"declarar-rec (
-   @potencia10(@n) = Si (@n >= 10) {(10 * evaluar @potencia10((@n / 10)) finEval)} sino {1};
-   @sumarDigitos(@n) = Si (@n >= evaluar @potencia10(@n) finEval) {(1 + evaluar @sumarDigitos((@n ~ evaluar @potencia10(@n) finEval)) finEval)} sino {0};
- )
- {
-   evaluar @sumarDigitos( 147 )
-   finEval
- }"
-)
-;; Texto limpio de programa_a: copiar SOLO la línea de abajo y pegarla en el intérprete (-->)
+;; Programa 9.a (texto listo para copiar y pegar en el intérprete -->, en una sola línea):
 #|
 declarar-rec ( @potencia10(@n) = Si (@n >= 10) {(10 * evaluar @potencia10((@n / 10)) finEval)} sino {1}; @sumarDigitos(@n) = Si (@n >= evaluar @potencia10(@n) finEval) {(1 + evaluar @sumarDigitos((@n ~ evaluar @potencia10(@n) finEval)) finEval)} sino {0}; ) { evaluar @sumarDigitos( 147 ) finEval }
 |#
@@ -443,32 +509,12 @@ declarar-rec ( @potencia10(@n) = Si (@n >= 10) {(10 * evaluar @potencia10((@n / 
 ;; Al regresar, las sumas se juntan: 5 + 4 + 3 + 2 + 1 + 0 = 15.
 ;; Con n=10 ocurre lo mismo hasta 10 + 9 + ... + 1 + 0 = 55.
 
-;; Prueba rápida: (probar programa_b5)
-(define programa_b5
-"declarar-rec (
-   @sumaNaturales(@n) = Si (@n > 0) {(@n + evaluar @sumaNaturales((@n ~ 1)) finEval)} sino {0};
- )
- {
-   evaluar @sumaNaturales( 5 )
-   finEval
- }"
-)
-;; Texto limpio de programa_b5: copiar SOLO la línea de abajo y pegarla en el intérprete (-->)
+;; Programa 9.b (n=5) (texto listo para copiar y pegar en el intérprete -->, en una sola línea):
 #|
 declarar-rec ( @sumaNaturales(@n) = Si (@n > 0) {(@n + evaluar @sumaNaturales((@n ~ 1)) finEval)} sino {0}; ) { evaluar @sumaNaturales( 5 ) finEval }
 |#
 
-;; Prueba rápida: (probar programa_b10)
-(define programa_b10
-"declarar-rec (
-   @sumaNaturales(@n) = Si (@n > 0) {(@n + evaluar @sumaNaturales((@n ~ 1)) finEval)} sino {0};
- )
- {
-   evaluar @sumaNaturales( 10 )
-   finEval
- }"
-)
-;; Texto limpio de programa_b10: copiar SOLO la línea de abajo y pegarla en el intérprete (-->)
+;; Programa 9.b (n=10) (texto listo para copiar y pegar en el intérprete -->, en una sola línea):
 #|
 declarar-rec ( @sumaNaturales(@n) = Si (@n > 0) {(@n + evaluar @sumaNaturales((@n ~ 1)) finEval)} sino {0}; ) { evaluar @sumaNaturales( 10 ) finEval }
 |#
@@ -489,17 +535,7 @@ declarar-rec ( @sumaNaturales(@n) = Si (@n > 0) {(@n + evaluar @sumaNaturales((@
 ;;   @multiplicar(4,0) = 0   (caso base)
 ;; Al regresar: 4 + 4 + 4 + 0 = 12.
 
-;; Prueba rápida: (probar programa_c)
-(define programa_c
-"declarar-rec (
-   @multiplicar(@a,@b) = Si (@b > 0) {(@a + evaluar @multiplicar(@a,(@b ~ 1)) finEval)} sino {0};
- )
- {
-   evaluar @multiplicar( 4,3 )
-   finEval
- }"
-)
-;; Texto limpio de programa_c: copiar SOLO la línea de abajo y pegarla en el intérprete (-->)
+;; Programa 9.c (texto listo para copiar y pegar en el intérprete -->, en una sola línea):
 #|
 declarar-rec ( @multiplicar(@a,@b) = Si (@b > 0) {(@a + evaluar @multiplicar(@a,(@b ~ 1)) finEval)} sino {0}; ) { evaluar @multiplicar( 4,3 ) finEval }
 |#
@@ -530,18 +566,7 @@ declarar-rec ( @multiplicar(@a,@b) = Si (@b > 0) {(@a + evaluar @multiplicar(@a,
 ;; Al llegar al 8, como 8 es mayor que 7 (@b), termina y retorna 0.
 ;; La recursión junta lo acumulado: 2 + 4 + 6 + 0 = 12.
 
-;; Prueba rápida: (probar programa_d)
-(define programa_d
-"declarar-rec (
-   @esPar?(@n) = Si (@n == 0) {1} sino { Si ((@n ~ 2) >= 0) { evaluar @esPar?((@n ~ 2)) finEval } sino {0} };
-   @sumaParesRango(@a,@b) = Si (@a <= @b) { Si evaluar @esPar?(@a) finEval {(@a + evaluar @sumaParesRango(add1(@a),@b) finEval)} sino {evaluar @sumaParesRango(add1(@a),@b) finEval}} sino {0};
- )
- {
-   evaluar @sumaParesRango( 2,7 )
-   finEval
- }"
-)
-;; Texto limpio de programa_d: copiar SOLO la línea de abajo y pegarla en el intérprete (-->)
+;; Programa 9.d (texto listo para copiar y pegar en el intérprete -->, en una sola línea):
 #|
 declarar-rec ( @esPar?(@n) = Si (@n == 0) {1} sino { Si ((@n ~ 2) >= 0) { evaluar @esPar?((@n ~ 2)) finEval } sino {0} }; @sumaParesRango(@a,@b) = Si (@a <= @b) { Si evaluar @esPar?(@a) finEval {(@a + evaluar @sumaParesRango(add1(@a),@b) finEval)} sino {evaluar @sumaParesRango(add1(@a),@b) finEval}} sino {0}; ) { evaluar @sumaParesRango( 2,7 ) finEval }
 |#
@@ -581,20 +606,7 @@ declarar-rec ( @esPar?(@n) = Si (@n == 0) {1} sino { Si ((@n ~ 2) >= 0) { evalua
 ;; Luego concat le pone "Hola:" delante, y el resultado es
 ;; "Hola:Sofia_Sara_y_Daniel".
 
-;; Prueba rápida: (probar programa_e)
-(define programa_e
-"declarar (
-     @integrantes = procedimiento () {\"Sofia_Sara_y_Daniel\"};
-     @saludar = procedimiento (@proSaludar) {procedimiento () {(\"Hola:\" concat evaluar @proSaludar() finEval)}};
-   )
-   {
-      declarar (@decorate = evaluar @saludar(@integrantes) finEval;)
-      {
-        evaluar @decorate( ) finEval
-      }
-   }"
-)
-;; Texto limpio de programa_e: copiar SOLO la línea de abajo y pegarla en el intérprete (-->)
+;; Programa 9.e (texto listo para copiar y pegar en el intérprete -->, en una sola línea):
 #|
 declarar ( @integrantes = procedimiento () {"Sofia_Sara_y_Daniel"}; @saludar = procedimiento (@proSaludar) {procedimiento () {("Hola:" concat evaluar @proSaludar() finEval)}}; ) { declarar (@decorate = evaluar @saludar(@integrantes) finEval;) { evaluar @decorate( ) finEval } }
 |#
@@ -632,7 +644,76 @@ declarar ( @integrantes = procedimiento () {"Sofia_Sara_y_Daniel"}; @saludar = p
 ;; añade "_ProfesoresFLP" al final, dando como resultado
 ;; "Hola:Robinson_y_Sara_ProfesoresFLP".
 
-;; Prueba rápida: (probar programa_f)
+;; Programa 9.f (texto listo para copiar y pegar en el intérprete -->, en una sola línea):
+#|
+declarar ( @integrantes = procedimiento () {"Robinson_y_Sara"}; @saludar = procedimiento (@proSaludar) { procedimiento (@finalMsg) {(("Hola:" concat evaluar @proSaludar() finEval) concat @finalMsg)}}; ) { declarar (@decorate = evaluar @saludar(@integrantes) finEval;) { evaluar @decorate("_ProfesoresFLP") finEval } }
+|#
+
+;; ============================================================
+;; PRUEBAS RÁPIDAS (opcional; los programas 9.a a 9.f van comentados como pide el taller)
+;; Para usarlas: borrar las dos líneas con #| y |# de este bloque, hacer Run y escribir en
+;; la ventana de abajo, por ejemplo: (probar programa_a)
+;; ============================================================
+#|
+(define programa_a
+"declarar-rec (
+   @potencia10(@n) = Si (@n >= 10) {(10 * evaluar @potencia10((@n / 10)) finEval)} sino {1};
+   @sumarDigitos(@n) = Si (@n >= evaluar @potencia10(@n) finEval) {(1 + evaluar @sumarDigitos((@n ~ evaluar @potencia10(@n) finEval)) finEval)} sino {0};
+ )
+ {
+   evaluar @sumarDigitos( 147 )
+   finEval
+ }"
+)
+(define programa_b5
+"declarar-rec (
+   @sumaNaturales(@n) = Si (@n > 0) {(@n + evaluar @sumaNaturales((@n ~ 1)) finEval)} sino {0};
+ )
+ {
+   evaluar @sumaNaturales( 5 )
+   finEval
+ }"
+)
+(define programa_b10
+"declarar-rec (
+   @sumaNaturales(@n) = Si (@n > 0) {(@n + evaluar @sumaNaturales((@n ~ 1)) finEval)} sino {0};
+ )
+ {
+   evaluar @sumaNaturales( 10 )
+   finEval
+ }"
+)
+(define programa_c
+"declarar-rec (
+   @multiplicar(@a,@b) = Si (@b > 0) {(@a + evaluar @multiplicar(@a,(@b ~ 1)) finEval)} sino {0};
+ )
+ {
+   evaluar @multiplicar( 4,3 )
+   finEval
+ }"
+)
+(define programa_d
+"declarar-rec (
+   @esPar?(@n) = Si (@n == 0) {1} sino { Si ((@n ~ 2) >= 0) { evaluar @esPar?((@n ~ 2)) finEval } sino {0} };
+   @sumaParesRango(@a,@b) = Si (@a <= @b) { Si evaluar @esPar?(@a) finEval {(@a + evaluar @sumaParesRango(add1(@a),@b) finEval)} sino {evaluar @sumaParesRango(add1(@a),@b) finEval}} sino {0};
+ )
+ {
+   evaluar @sumaParesRango( 2,7 )
+   finEval
+ }"
+)
+(define programa_e
+"declarar (
+     @integrantes = procedimiento () {\"Sofia_Sara_y_Daniel\"};
+     @saludar = procedimiento (@proSaludar) {procedimiento () {(\"Hola:\" concat evaluar @proSaludar() finEval)}};
+   )
+   {
+      declarar (@decorate = evaluar @saludar(@integrantes) finEval;)
+      {
+        evaluar @decorate( ) finEval
+      }
+   }"
+)
 (define programa_f
 "declarar (
      @integrantes = procedimiento () {\"Robinson_y_Sara\"};
@@ -645,10 +726,4 @@ declarar ( @integrantes = procedimiento () {"Sofia_Sara_y_Daniel"}; @saludar = p
       }
    }"
 )
-;; Prueba para el intérprete (-->)
-#|
-declarar ( @integrantes = procedimiento () {"Robinson_y_Sara"}; @saludar = procedimiento (@proSaludar) { procedimiento (@finalMsg) {(("Hola:" concat evaluar @proSaludar() finEval) concat @finalMsg)}}; ) { declarar (@decorate = evaluar @saludar(@integrantes) finEval;) { evaluar @decorate("_ProfesoresFLP") finEval } }
 |#
-  
-  
-  
