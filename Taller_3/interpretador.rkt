@@ -32,10 +32,18 @@
    (expresion (primitiva-unaria "("expresion ")") primapp-un-exp)
    (expresion ("Si" expresion "{" expresion "}" "sino" "{" expresion "}") condicional-exp)
    (expresion ("declarar" "(" (arbno identifier "=" expresion ";") ")" "{" expresion "}") variableLocal-exp)
+;; Punto 7:
+   ; Gramática BNF
+   ;<expresion> ::= procedimiento ( { <identificador> }*(,) ) { <expresion> }
+   ;             procedimiento-ex (ids cuerpo)
    (expresion ("procedimiento" "(" (separated-list identifier ",") ")" "{" expresion "}") procedimiento-ex)
+;; Punto 7:
+   ;Gramática BNF
+   ; <expresion> ::= evaluar <expresion> ( { <expresion> }*(,) ) finEval
+   ;            app-exp (exp exps)
    (expresion ("evaluar" expresion "(" (separated-list expresion ",") ")" "finEval") app-exp)
 
-   ;nueva gramática
+   ;Punto 8: nueva gramática
    ;Gramática BNF
    ;<expresion> ::= declarar-rec ( { <identificador> "(" { <identificador> }*(,) ")" "=" <expresion> }*(;) ) { <expresion> }
    ;             declararRec-exp (proc-names idss bodies cuerpo)
@@ -106,6 +114,8 @@
   (extendido (syms (list-of symbol?))
                        (vals (list-of scheme-value?))
                        (env ambiente?))
+
+;; PUNTO 8
   (recursivo-extendido (proc-names (list-of symbol?))
                        (idss (list-of (list-of symbol?)))
                        (bodies (list-of expresion?))
@@ -118,7 +128,7 @@
 ;;  - exp: el cuerpo del procedimiento (sin evaluar).
 ;;  - amb: el ambiente donde se declaró el procedimiento.
 ;; Se retorna al evaluar un procedimiento y se usa al aplicarlo.
-
+;; Punto 7
 (define-datatype procVal procVal?
   (cerradura
      (lista-ID(list-of symbol?))
@@ -174,7 +184,8 @@
                              (if (number? pos)
                                  (list-ref vals pos)
                                  (apply-env envF sym))))
-    
+      
+;; PUNTO 8: Busqueda de procedimientos recursivos
     (recursivo-extendido (proc-names idss bodies envF)
                          (let ((pos (list-find-position sym proc-names)))
                            (if (number? pos)
@@ -249,7 +260,7 @@
   )
 
 ;; ============================================================
-;; apply-procedure
+;; Punto 7: apply-procedure
 ;; ============================================================
 
 (define apply-procedure
@@ -298,7 +309,7 @@
                          (let ((args (eval-rands exps env)))
                            (evaluar-expresion cuerpo
                                               (extend-env ids args env))))
-
+;; Punto 7: Invocación procedimientos
       (app-exp (exp exps)
                (let ((proc (evaluar-expresion exp env))
                      (args (eval-rands exps env)))
@@ -307,10 +318,11 @@
                      (eopl:error 'evaluar-expresion
                                  "se aplico algo que no es un procedimiento ~s" proc))))
 
-           
+;; Punto 7: Creación de procedimientos
       (procedimiento-ex (ids cuerpo)
                         (cerradura ids cuerpo env))
-      
+
+;; PUNTO 8: Evaluación declararRec-exp
       (declararRec-exp (proc-names idss bodies cuerpo)
                        (evaluar-expresion cuerpo
                                        (recursivo-extendido
@@ -532,3 +544,52 @@
       }
    }"
 )
+
+;; PUNTO 9.F : @saludar con mensaje al final: decorador con parámetro
+;; El programa extiende el concepto de decorador del punto e: un procedimiento
+;; que recibe otro procedimiento y retorna uno nuevo que, además de agregar el
+;; prefijo "Hola:" al inicio, acepta un argumento adicional (@finalmsg) para
+;; concatenarlo al final de todo el texto.
+
+;; @integrantes: procedimiento sin parámetros que retorna el texto con los
+;; nombres base, "Robinson_y_Sara".
+
+;; @saludar(@proSaludar): recibe un procedimiento, @proSaludar, y no ejecuta
+;; nada por sí mismo: retorna un procedimiento nuevo que espera el parámetro
+;; @finalmsg. Al invocarse, llama a @proSaludar con evaluar @proSaludar() finEval,
+;; le concatena "Hola:" adelante y luego concatena el valor de @finalmsg al
+;; final mediante dos operaciones concat anidadas.
+
+;; @decorate: no se escribe a mano, se obtiene llamando a @saludar con
+;; @integrantes: evaluar @saludar(@integrantes) finEval. Se pasa
+;; @integrantes sin evaluar, es decir, el procedimiento mismo y no su
+;; resultado. El valor de @decorate es el procedimiento nuevo (que espera
+;; un parámetro) retornado por @saludar.
+;;
+;; Se usan dos declarar anidados: las expresiones de un declarar se evalúan en
+;; el ambiente de afuera, así que @decorate no vería a @saludar ni a
+;; @integrantes si se definiera en el mismo declarar. Por eso va en el
+;; declarar interior.
+
+;; Al invocar @decorate("_ProfesoresFLP"), el parámetro @finalmsg recibe el
+;; texto "_ProfesoresFLP". El cuerpo de la cerradura busca @proSaludar en el
+;; ambiente guardado y lo llama, obteniendo "Robinson_y_Sara".
+;; El primer concat genera "Hola:Robinson_y_Sara", y el segundo concat le
+;; añade "_ProfesoresFLP" al final, dando como resultado
+;; "Hola:Robinson_y_Sara_ProfesoresFLP".
+
+(define programa_f
+  "declarar (
+     @integrantes = procedimiento () {\"Robinson_y_Sara\"};
+     @saludar = procedimiento (@proSaludar) { procedimiento (@finalMsg) {((\"Hola:\" concat evaluar @proSaludar() finEval) concat @finalMsg)}};
+   )
+   {
+      declarar (@decorate = evaluar @saludar(@integrantes) finEval;)
+      {
+        evaluar @decorate(\"_ProfesoresFLP\") finEval
+      }
+   }"
+)
+  
+  
+  
