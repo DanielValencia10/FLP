@@ -276,9 +276,10 @@
                    
                
 
-;; Recibe un procedimiento (cerradura) y una lista de argumentos (args), 
-;; evalua el cuerpo del procedimiento extendiendo el ambiente guardado en la cerradura,
-;; con los parámteros formales y los argumentos pasados.
+;; Recibe un procedimiento (cerradura) y una lista de argumentos (args),
+;; valida que el numero de parámetros declarados sea la misma cantidad que los argumentos que se pasen.
+;; Y si coinciden evalúa el cuerpo extendiendo el ambiente, y si no coinciden
+;; detiene la ejercución arrojando un error.
 
 
 
