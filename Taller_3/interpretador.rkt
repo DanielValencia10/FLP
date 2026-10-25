@@ -380,7 +380,7 @@
   (lambda (texto)
     (evaluar-programa (scan&parse texto))))
 
-;; a) @sumarDigitos(n): suma los dígitos de un entero positivo sin usar módulo ni
+;; PUNTO 9.a) @sumarDigitos(n): suma los dígitos de un entero positivo sin usar módulo ni
 ;; división entera, solo restas, comparaciones y recursión.
 ;;
 ;; Idea: cada dígito d de un número, ubicado en la posición de una potencia de 10 p,
@@ -415,7 +415,7 @@
  }"
 )
 
-;; b5 y b10) @sumaNaturales(n): calcula la suma de los primeros n enteros positivos
+;; PUNTO 9.b5 y PUNTO 9. b10) @sumaNaturales(n): calcula la suma de los primeros n enteros positivos
 ;; de forma recursiva. Los dos programas usan el mismo procedimiento; solo cambia
 ;; el valor con el que se llama (n=5 y n=10).
 ;;
@@ -450,7 +450,7 @@
  }"
 )
 
-;; c) @multiplicar(a,b): calcula el producto de dos enteros no negativos mediante
+;; PUNTO 9.c) @multiplicar(a,b): calcula el producto de dos enteros no negativos mediante
 ;; sumas sucesivas, sin usar la primitiva de multiplicación (*) en ningún punto.
 ;; Es recursivo: @multiplicar se llama a sí mismo.
 ;;
@@ -476,7 +476,7 @@
  }"
 )
 
-;; d) sumaParesRango
+;; PUNTO 9.d) sumaParesRango
 ;; El programa divide el problema en dos partes: verificar si un número es par
 ;; (@esPar?) y recorrer un rango sumando solo los pares (@sumaParesRango).
 ;; No usa módulo ni división: solo restas, comparaciones, add1 y la suma del
@@ -513,7 +513,7 @@
  }"
 )
 
-;; e) @saludar: decorador
+;; PUNTO 9.e) @saludar: decorador
 ;; El programa usa el concepto de decorador: un procedimiento que recibe otro
 ;; procedimiento y retorna uno nuevo que hace lo mismo que el original, pero
 ;; agregándole algo (aquí, el saludo "Hola:" al inicio).
@@ -561,10 +561,10 @@
    }"
 )
 
-;; PUNTO 9.F : @saludar con mensaje al final: decorador con parámetro
+;; PUNTO 9.f : @saludar con mensaje al final: decorador con parámetro
 ;; El programa extiende el concepto de decorador del punto e: un procedimiento
 ;; que recibe otro procedimiento y retorna uno nuevo que, además de agregar el
-;; prefijo "Hola:" al inicio, acepta un argumento adicional (@finalmsg) para
+;; prefijo "Hola:" al inicio, acepta un argumento adicional (@finalMsg) para
 ;; concatenarlo al final de todo el texto.
 
 ;; @integrantes: procedimiento sin parámetros que retorna el texto con los
