@@ -384,17 +384,37 @@
  }"
 )
 
-;b)Primero evaluamos que el número sea mayor a cero, si no, retornamos cero, esa será nuestra base.
-;Para los números que sean mayores a cero, lo sumamos junto al mismo programa pasándole como parámetro el mismo número menos 1,
-;que volverá a realizar la validación base y, cuando termine, sumará todos los números resultados de cada recursión.
-;Por ejemplo, con n=5, como es mayor a 0, 5 lo sumamos con el programa(5-1), eso nos retornará 4 sumado con el programa(4-1), y así hasta que llegue 1-1=0, se acabe la recursión y sume 5+4+3+2+1 igual a 15.
+;; b5 y b10) @sumaNaturales(n): calcula la suma de los primeros n enteros positivos
+;; de forma recursiva. Los dos programas usan el mismo procedimiento; solo cambia
+;; el valor con el que se llama (n=5 y n=10).
+;;
+;; Caso base: si n no es mayor que 0, retorna 0. Es el neutro de la suma, así que
+;; no altera el total. Esta guarda también evita que la recursión baje para siempre
+;; si llegara un número negativo.
+;; Caso recursivo: si n es mayor que 0, retorna n sumado con el resultado de
+;; @sumaNaturales(n - 1), que repite la misma validación con un número menor.
+;;
+;; Ejemplo con n=5: 5 + @sumaNaturales(4), luego 4 + @sumaNaturales(3), y así hasta
+;; @sumaNaturales(1) = 1 + @sumaNaturales(0), donde se llega al caso base y retorna 0.
+;; Al regresar, las sumas se juntan: 5 + 4 + 3 + 2 + 1 + 0 = 15.
+;; Con n=10 ocurre lo mismo hasta 10 + 9 + ... + 1 + 0 = 55.
 
-(define programa_b
+(define programa_b5
 "declarar-rec (
    @sumaNaturales(@n) = Si (@n > 0) {(@n + evaluar @sumaNaturales((@n ~ 1)) finEval)} sino {0};
  )
  {
    evaluar @sumaNaturales( 5 )
+   finEval
+ }"
+)
+
+(define programa_b10
+"declarar-rec (
+   @sumaNaturales(@n) = Si (@n > 0) {(@n + evaluar @sumaNaturales((@n ~ 1)) finEval)} sino {0};
+ )
+ {
+   evaluar @sumaNaturales( 10 )
    finEval
  }"
 )
