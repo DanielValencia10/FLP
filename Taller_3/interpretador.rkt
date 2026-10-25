@@ -419,10 +419,21 @@
  }"
 )
 
-;;c)Primero evaluamos que ambos números sean mayores a cero, si no, retornamos cero, partiendo de ahí.
-;;Iniciamos con el ejemplo de una vez: por parámetros ingresamos 4 y 3 -> (4,3).
-;;Cogemos el cuatro y lo sumamos con el resultado del programa, pasándole como parámetros 4 y 3-1 -> (4,2).
-;;Ahí nos retorna otro cuatro y ese lo sumamos con el programa evaluado nuevamente, y así hasta que el segundo parámetro sea cero, acabe la recursión y nos dé como resultado 4+4+4 = 12.
+;; c) @multiplicar(a,b): calcula el producto de dos enteros no negativos mediante
+;; sumas sucesivas, sin usar la primitiva de multiplicación (*) en ningún punto.
+;; Es recursivo: @multiplicar se llama a sí mismo.
+;;
+;; Caso base: si b no es mayor que 0, retorna 0. Es el neutro de la suma, y cubre
+;; también el caso en que a sea 0 (todas las sumas darían 0).
+;; Caso recursivo: si b es mayor que 0, retorna a sumado con el resultado de
+;; @multiplicar(a, b - 1). El parámetro a se mantiene igual y b baja de uno en uno,
+;; así que la recursión se acerca siempre al caso base.
+;;
+;; Ejemplo con (4,3): 4 + @multiplicar(4,2)
+;;   @multiplicar(4,2) = 4 + @multiplicar(4,1)
+;;   @multiplicar(4,1) = 4 + @multiplicar(4,0)
+;;   @multiplicar(4,0) = 0   (caso base)
+;; Al regresar: 4 + 4 + 4 + 0 = 12.
 
 (define programa_c
 "declarar-rec (
