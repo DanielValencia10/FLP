@@ -36,6 +36,9 @@
    (expresion ("evaluar" expresion "(" (separated-list expresion ",") ")" "finEval") app-exp)
 
    ;nueva gramática
+   ;Gramática BNF
+   ;<expresion> ::= declarar-rec ( { <identificador> "(" { <identificador> }*(,) ")" "=" <expresion> }*(;) ) { <expresion> }
+   ;             declararRec-exp (proc-names idss bodies cuerpo)
 
    (expresion ("declarar-rec" "(" (arbno identifier "(" (separated-list identifier ",") ")" "=" expresion ";") ")" "{" expresion"}") declararRec-exp)
    
@@ -255,9 +258,9 @@
       (cerradura (lista-ID exp amb)
                (evaluar-expresion exp (extend-env lista-ID args amb))))))
 
-;;Recibe una cerradura (procVal) y la lista de argumentos ya evaluados, y retorna el resultado
-;;a evaluar el cuerpo del procedimiento en el ambiente guardado en la cerradura, extendido con
-;;los parámteros ligados a los argumentos.
+;; Recibe un procedimiento (cerradura) y una lista de argumentos (args), 
+;; evalua el cuerpo del procedimiento extendiendo el ambiente guardado en la cerradura,
+;; con los parámteros formales y los argumentos pasados.
 
 
 
