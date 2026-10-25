@@ -482,7 +482,40 @@
  }"
 )
 
-;; e)
+;; e) @saludar: decorador
+;; El programa usa el concepto de decorador: un procedimiento que recibe otro
+;; procedimiento y retorna uno nuevo que hace lo mismo que el original, pero
+;; agregándole algo (aquí, el saludo "Hola:" al inicio).
+;;
+;; @integrantes: procedimiento sin parámetros que retorna el texto con los
+;; nombres del grupo, "Sofia_Sara_y_Daniel".
+;;
+;; @saludar(@proSaludar): recibe un procedimiento, @proSaludar, y no ejecuta
+;; nada por sí mismo: retorna un procedimiento nuevo (sin parámetros) que, al
+;; invocarse, llama a @proSaludar con evaluar @proSaludar() finEval y
+;; concatena con concat el texto "Hola:" delante de lo que ese procedimiento
+;; retorne.
+;;
+;; @decorate: no se escribe a mano, se obtiene llamando a @saludar con
+;; @integrantes: evaluar @saludar(@integrantes) finEval. Se pasa
+;; @integrantes sin evaluar, es decir, el procedimiento mismo y no su
+;; resultado. El valor de @decorate es el procedimiento nuevo que retornó
+;; @saludar.
+;;
+;; Se usan dos declarar anidados: las expresiones de un declarar se evalúan en
+;; el ambiente de afuera, así que @decorate no vería a @saludar ni a
+;; @integrantes si se definiera en el mismo declarar. Por eso va en el
+;; declarar interior.
+;;
+;; Ejemplo:
+;; Al evaluar @saludar(@integrantes) se crea un ambiente donde @proSaludar es
+;; @integrantes, y se retorna una cerradura que guarda ese ambiente. Esa
+;; cerradura es @decorate.
+;; Al invocar @decorate( ), su cuerpo busca @proSaludar en el ambiente que
+;; guardó la cerradura (aunque @saludar ya terminó) y lo llama, obteniendo
+;; "Sofia_Sara_y_Daniel".
+;; Luego concat le pone "Hola:" delante, y el resultado es
+;; "Hola:Sofia_Sara_y_Daniel".
 
 (define programa_e
   "declarar (
