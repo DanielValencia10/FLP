@@ -481,3 +481,18 @@
    finEval
  }"
 )
+
+;; e)
+
+(define programa_e
+  "declarar (
+     @integrantes = procedimiento () {\"Sofia_Sara_y_Daniel\"};
+     @saludar = procedimiento (@proSaludar) {procedimiento () {(\"Hola:\" concat evaluar @proSaludar() finEval)}};
+   )
+   {
+      declarar (@decorate = evaluar @saludar(@integrantes) finEval;)
+      {
+        evaluar @decorate( ) finEval
+      }
+   }"
+)
