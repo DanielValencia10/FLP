@@ -267,7 +267,14 @@
   (lambda (proc args)
     (cases procVal proc
       (cerradura (lista-ID exp amb)
-               (evaluar-expresion exp (extend-env lista-ID args amb))))))
+                 (let ((num-params (length lista-ID))
+                       (num-args (length args)))                
+                   (if (= num-params num-args)
+                       (evaluar-expresion exp (extend-env lista-ID args amb))
+                       (eopl:error 'apply-procedure "El procedimiento esperaba ~s argumentos pero recibió ~s"
+                                   num-params num-args)))))))
+                   
+               
 
 ;; Recibe un procedimiento (cerradura) y una lista de argumentos (args), 
 ;; evalua el cuerpo del procedimiento extendiendo el ambiente guardado en la cerradura,
