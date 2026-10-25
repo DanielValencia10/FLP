@@ -380,18 +380,34 @@
   (lambda (texto)
     (evaluar-programa (scan&parse texto))))
 
-;;a) primero necesitamos saber qué tan grande es el número para buscar su representación en base 10
-;;por ejemplo, si ingresamos el 147, el programa tiene que calcular que como son tres números le toca usar el 100. 
-;;Entonces, cogemos ese 147 y le empezamos a restar 100.
-;;Como solo se lo puedo restar una vez, ahí ya tengo guardado mi primer resultado , que es un 1.
-;;me quedan el 47, Ahora con ese numero, vuelvo a aplicar la misma lógica desde el principio, el programa ve que es de dos dígitos, así que le toca usar el 10.
-;;Le resto 10 todas las veces que pueda al 47, que van a ser 4 veces, y me termina sobrando un 7. Y ya por último, con ese 7, la escala que toca es el 1, así que lo resto 7 veces hasta que me quede en la nada, en cero.
-;;Al final, con recursividad es que el programa va a ir arrastrando y sumando ese 1, ese 4 y ese 7 que fuimos sacando en cada pason y que como resultado nos de 12.
+;; a) @sumarDigitos(n): suma los dígitos de un entero positivo sin usar módulo ni
+;; división entera, solo restas, comparaciones y recursión.
+;;
+;; Idea: cada dígito d de un número, ubicado en la posición de una potencia de 10 p,
+;; equivale a restar p exactamente d veces. Por eso, el total de restas que se hacen
+;; (de la potencia más grande a la más pequeña) es igual a la suma de los dígitos.
+;;
+;; @potencia10(n): retorna la mayor potencia de 10 que no supera a n. Si n tiene
+;; más de una cifra (n >= 10), multiplica por 10 el resultado de llamarse con n / 10;
+;; si no, retorna 1 (10^0). Ejemplo: para 147 -> 10 * (10 * 1) = 100.
+;;
+;; @sumarDigitos(n): calcula p = @potencia10(n). Si n >= p, todavía cabe una resta:
+;; retorna 1 + @sumarDigitos(n - p). Si n < p, retorna 0. La comparación usa >=
+;; porque cuando n es igual a p (por ejemplo 10 con p = 10) aún cabe una resta.
+;; Como se recalcula la potencia de 10 en cada llamada, al bajar el número a un
+;; tamaño menor, la potencia se ajusta sola (si queda un 0 intermedio, ese dígito
+;; simplemente aporta 0 restas).
+;;
+;; Ejemplo con 147:
+;;   p = 100 -> 1 resta  -> queda 47
+;;   p = 10  -> 4 restas -> queda 7
+;;   p = 1   -> 7 restas -> queda 0
+;;   total de restas = 1 + 4 + 7 = 12
 
 (define programa_a
 "declarar-rec (
-   @ndigits?(@n) = Si (@n >= 10) {(10 * evaluar @ndigits?((@n / 10)) finEval)} sino {1};
-   @sumarDigitos(@n) = Si (@n >= evaluar @ndigits?(@n) finEval) {(1 + evaluar @sumarDigitos((@n ~ evaluar @ndigits?(@n) finEval)) finEval)} sino {0};
+   @potencia10(@n) = Si (@n >= 10) {(10 * evaluar @potencia10((@n / 10)) finEval)} sino {1};
+   @sumarDigitos(@n) = Si (@n >= evaluar @potencia10(@n) finEval) {(1 + evaluar @sumarDigitos((@n ~ evaluar @potencia10(@n) finEval)) finEval)} sino {0};
  )
  {
    evaluar @sumarDigitos( 147 )
