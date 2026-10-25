@@ -174,16 +174,16 @@
 ;; llega al ambiente vacío lanza el error de variable inexistente.
 
 
-(define apply-env
-  (lambda (env sym)
+(define buscar-variable
+  (lambda (sym env)
     (cases ambiente env
       (vacio ()
-                        (eopl:error 'apply-env "Error, la variable no existe ~s" sym))
+                        (eopl:error 'buscar-variable "Error, la variable no existe ~s" sym))
       (extendido (syms vals envF)
                            (let ((pos (list-find-position sym syms)))
                              (if (number? pos)
                                  (list-ref vals pos)
-                                 (apply-env envF sym))))
+                                 (buscar-variable sym envF))))
       
 ;; PUNTO 8: Busqueda de procedimientos recursivos
     (recursivo-extendido (proc-names idss bodies envF)
@@ -192,7 +192,7 @@
                                (cerradura (list-ref idss pos)
                                         (list-ref bodies pos)
                                         env)
-                               (apply-env envF sym)))))))
+                               (buscar-variable sym envF)))))))
 
 
 
@@ -290,7 +290,7 @@
   (lambda (exp env)
     (cases expresion exp
       (numero-lit (datum) datum)
-      (var-exp (id) (apply-env env id))
+      (var-exp (id) (buscar-variable id env))
       (texto-lit (text) text)
       (primapp-bin-exp (exp1 prim exp2)
                        (let ((args (list (eval-rand exp1 env) (eval-rand exp2 env))))
